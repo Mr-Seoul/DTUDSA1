@@ -1,4 +1,67 @@
+import math
 import copy
+
+class SortingArray():
+    def __init__(self,arr):
+        self.arr = arr
+
+    def insertSort(self):
+        arr = copy.deepcopy(self.arr)
+        sortedNum = 0
+
+        def swap(indexA,indexB):
+            temp = arr[indexA]
+            arr[indexA] = arr[indexB]
+            arr[indexB] = temp
+        
+        while sortedNum < len(arr):
+            min = float('inf')
+            minIndex = -1
+            for index in range(sortedNum,len(arr)):
+                if arr[index] < min:
+                    min = arr[index]
+                    minIndex = index
+            swap(sortedNum,minIndex)
+            sortedNum += 1
+            print(arr)
+
+    def mergeSort(self):
+        n = 1
+        arr = copy.deepcopy(self.arr)
+
+        def mergeSortedArrays(A,B):
+            result = []
+            while len(A) + len(B) > 0:
+                    if len(A) > 0 and len(B) > 0:
+                        if A[0] < B[0]:
+                            result.append(A[0])
+                            del A[0]
+                        else:
+                            result.append(B[0])
+                            del B[0]
+                    elif len(A) > 0:
+                        for i in A:
+                            result.append(i)
+                        A = []
+                    elif len(B) > 0:
+                        for i in B:
+                            result.append(i)
+                        B = []
+            return result
+
+        while n < len(arr):
+            for seg in range(0,math.ceil(len(arr)/(2*n))):
+                min = 2*n*seg
+                leftarr = arr[min:min+n]
+                rightarr = arr[min+n:min+2*n]
+                newarr = mergeSortedArrays(leftarr,rightarr)
+                arr[min:min+2*n] = newarr
+            n *= 2
+        
+        return arr
+        
+    def printContents(self):
+        print(self.arr)
 
 class Stack:
     def __init__(self):
@@ -491,10 +554,13 @@ G1.insertDirectedEdge(1,2)
 G1.insertDirectedEdge(2,3)
 G1.insertDirectedEdge(3,1)
 
-print(G1.allSCC())
+S = SortingArray([9,3,0,1,2])
+print(S.insertSort())
+
+
 
 #Both: Hierholzer's algorithm
 
 #Add datastructures Binary search trees, 2-3 trees, minimum subarray values
 
-#Add merge sort, insert sort and quicksort
+#Add Quicksort
