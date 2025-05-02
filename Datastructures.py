@@ -1,16 +1,5 @@
 import copy
 
-class dirEdge:
-    def __init__(self,origin,to,weight=1):
-        self.to = to
-        self.weight = weight
-        self.origin = origin
-
-class heapNode:
-    def __init__(self,key,val):
-        self.key = key
-        self.val = val
-
 class Stack:
     def __init__(self):
         self.stackarr = []
@@ -45,8 +34,13 @@ class Queue:
         print(self.stackarr)
 
 class PriorityQueue:
+    class heapNode:
+        def __init__(self,key,val):
+            self.key = key
+            self.val = val
+
     def __init__(self,condition):
-        self.heap = [heapNode(-1,-1)]
+        self.heap = [PriorityQueue.heapNode(-1,-1)]
         self.keymap = {}
         self.size = 0
         #max = "max", min = "min"
@@ -122,7 +116,7 @@ class PriorityQueue:
     def insert(self, keypair):
         #The keypair needs to be in the format: {"key":key,"val":value}
         if keypair['key'] not in self.keymap:
-            self.heap.append(heapNode(keypair['key'],keypair['val']))
+            self.heap.append(PriorityQueue.heapNode(keypair['key'],keypair['val']))
             self.size+=1
             self.keymap.update({keypair['key']:self.size})
 
@@ -151,6 +145,12 @@ class PriorityQueue:
         return key in self.keymap
     
 class Graph:
+    class dirEdge:
+        def __init__(self,origin,to,weight=1):
+            self.to = to
+            self.weight = weight
+            self.origin = origin
+    
     def __init__(self,n):
         self.adjarr = [[] for i in range(0,n)]
         self.size = n
@@ -169,42 +169,50 @@ class Graph:
         visited[v0] = True
         parent = [-1 for i in range(0,self.size)]
         parent[v0] = v0
-        path = []
-        S.enqueue(v0)
+        visitpath = []
+
+        def path(checkingNode):
+            path = []
+            while checkingNode != parent[checkingNode]:
+                path.append(checkingNode)
+                checkingNode = parent[checkingNode]
+            path.append(checkingNode)
+            return path[::-1]
+
+        S.enqueue((v0,False))
         while(not S.isEmpty()):
             curNode = S.dequeue()
+            #Check if target
+            if curNode == target:
+                return path(curNode)
             for neighbour in self.adjarr[curNode]:
                 if not visited[neighbour.to]:
                     S.enqueue(neighbour.to)
                     parent[neighbour.to] = curNode
                     visited[neighbour.to] = True
-                #Check if target
-                if neighbour.to == target:
-                    checkingNode = neighbour.to
-                    path = []
-                    while checkingNode != parent[checkingNode]:
-                        path.append(checkingNode)
-                        checkingNode = parent[checkingNode]
-                    path.append(checkingNode)
-                    return path[::-1]
-            path.append(curNode)
-        return path
+            visitpath.append(curNode)
+        return (visitpath)
     
     #Returns DFS path
     def DFS(self,v0):
         S = Stack()
         visited = [False for i in range(0,self.size)]
         visited[v0] = True
-        path = []
-        S.push(v0)
+        visitpath = []
+        postpath = []
+        S.push((v0,False))
         while(not S.isEmpty()):
-            curNode = S.pop()
-            for neighbour in self.adjarr[curNode]:
-                if not visited[neighbour.to]:
-                    S.push(neighbour.to)
-                    visited[neighbour.to] = True
-            path.append(curNode)
-        return path
+            curNode, visit = S.pop()
+            if visit:
+                postpath.append(curNode)
+            else:
+                S.push((curNode,True))
+                visitpath.append(curNode)
+                for neighbour in self.adjarr[curNode]:
+                    if not visited[neighbour.to]:
+                        S.push((neighbour.to,False))
+                        visited[neighbour.to] = True
+        return [visitpath, postpath]
     
     def Dijkstra(self,v0,target = -1):
         P = PriorityQueue("min")        
@@ -248,7 +256,7 @@ class Graph:
         else:
             return []
     
-    def allSCC(self):
+    def allCC(self):
         nodes = [i for i in range(0,self.size)]
         result = []
         while len(nodes) > 0:
@@ -299,8 +307,8 @@ class UnDirectedGraph(Graph):
         print(self.unionarr)
     
     def insertUndirectedEdge(self,vFrom,vTo,weight=1):
-        self.adjarr[vFrom].append(dirEdge(vFrom,vTo,weight))
-        self.adjarr[vTo].append(dirEdge(vTo,vFrom,weight))
+        self.adjarr[vFrom].append(Graph.dirEdge(vFrom,vTo,weight))
+        self.adjarr[vTo].append(Graph.dirEdge(vTo,vFrom,weight))
         self.union(vFrom,vTo)
     
     def Kruskal(self):
@@ -375,9 +383,16 @@ class DirectedGraph(Graph):
     def __init__(self,n):
         super().__init__(n)
         self.directed = True
+
+    def reversedGraph(self):
+        newGraph = DirectedGraph(self.size)
+        for vertexList in self.adjarr:
+            for edge in vertexList:
+                newGraph.insertDirectedEdge(edge.to,edge.origin,edge.weight)
+        return newGraph
     
     def insertDirectedEdge(self,vFrom,vTo,weight=1):
-        self.adjarr[vFrom].append(dirEdge(vFrom,vTo,weight))
+        self.adjarr[vFrom].append(Graph.dirEdge(vFrom,vTo,weight))
     
     def TopologicalSort(self):
         degreeList = [0 for _ in range(0,self.size)]
@@ -439,18 +454,47 @@ class DirectedGraph(Graph):
             return minDist
         else:
             return [minDist[target],[]]
+    
+    def allSCC(self):
+        #Kosaraju's algorithm
+        nodes = [False for i in range(0,self.size)]
+        allSCC = []
+        DFS = []
 
-G1 = UnDirectedGraph(4)
-G1.insertUndirectedEdge(0,1)
-G1.insertUndirectedEdge(1,2)
-G1.insertUndirectedEdge(1,3,10)
-G1.insertUndirectedEdge(2,3,5)
+        for nodeindex in range(0,len(nodes)):
+            if not nodes[nodeindex]:
+                curDFS = self.DFS(nodeindex)[1]
+                for node in curDFS:
+                    nodes[node] = True
+                    DFS.append(node)
+        
+        #Reset nodes for algorithm
+        nodes = [False for i in range(0,self.size)]
 
-print(G1.Prim(0)[0])
-G1.Prim(0)[1].printAdjList()
+        #Reversed DFS
+        reversedGraph = self.reversedGraph()
+        for node in DFS[::-1]:
+            if not nodes[node]:
+                reversedDFS = reversedGraph.DFS(node)[1]
+
+                reversedDFS = [i for i in reversedDFS if not nodes[i]]
+                for dfsNode in range(0,len(reversedDFS)):
+                    nodes[reversedDFS[dfsNode]] = True
+                
+                allSCC.append(reversedDFS)
+
+        return allSCC
+
+G1 = DirectedGraph(5)
+G1.insertDirectedEdge(0,1)
+G1.insertDirectedEdge(1,2)
+G1.insertDirectedEdge(2,3)
+G1.insertDirectedEdge(3,1)
+
+print(G1.allSCC())
 
 #Both: Hierholzer's algorithm
 
-#Directed: SCC (Kosajaru's algorithm)
-
 #Add datastructures Binary search trees, 2-3 trees, minimum subarray values
+
+#Add merge sort, insert sort and quicksort
