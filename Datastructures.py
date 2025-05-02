@@ -23,7 +23,8 @@ class SortingArray():
                     minIndex = index
             swap(sortedNum,minIndex)
             sortedNum += 1
-            print(arr)
+        
+        return arr
 
     def mergeSort(self):
         n = 1
@@ -556,8 +557,6 @@ G1.insertDirectedEdge(3,1)
 
 S = SortingArray([9,3,0,1,2])
 print(S.insertSort())
-
-
 
 #Both: Hierholzer's algorithm
 
