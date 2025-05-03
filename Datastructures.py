@@ -330,18 +330,11 @@ class Graph:
                     degreeList[edge.to]["din"] += 1 
             return degreeList
 
-        def resetUsedEdges():
+        def filledUsedEdges(truthValue):
             usedEdges = [[] for i in range(0,self.size)]
             for vertexList in self.adjarr:
                 for edge in vertexList:
-                    usedEdges[edge.origin].append(False)
-            return usedEdges
-        
-        def fullEdgesList():
-            usedEdges = [[] for i in range(0,self.size)]
-            for vertexList in self.adjarr:
-                for edge in vertexList:
-                    usedEdges[edge.origin].append(True)
+                    usedEdges[edge.origin].append(truthValue)
             return usedEdges
         
         def curEdgesUsed(arr):
@@ -367,7 +360,7 @@ class Graph:
                         break
         
         def allNodesUsed():
-            return usedEdges == fullEdgesList()
+            return usedEdges == filledUsedEdges(True)
         
         def checkDegreeConditions():
             v0 = 0
@@ -422,7 +415,7 @@ class Graph:
         #Check Degrees and find starting node
         v0 = checkDegreeConditions()
                     
-        usedEdges = resetUsedEdges()
+        usedEdges = filledUsedEdges(False)
         S = Stack()
         curNode = v0
 
@@ -700,7 +693,7 @@ class DirectedGraph(Graph):
                 
                 allSCC.append(reversedDFS)
 
-        return allSC
+        return allSCC
 
 #Add datastructures Binary search trees, 2-3 trees, segment trees
 
