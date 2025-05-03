@@ -1,7 +1,7 @@
 import math
 import copy
 
-class SortingArray():
+class SortingArray:
     def __init__(self,arr):
         self.arr = arr
 
@@ -319,12 +319,144 @@ class Graph:
             return minDist
         else:
             return []
+        
+    def Hierholzer(self):
+
+        def degreeList():
+            degreeList = [{"din":0,"dout":0} for i in range(0,self.size)]
+            for vertexList in self.adjarr:
+                for edge in vertexList:
+                    degreeList[edge.origin]["dout"] += 1 
+                    degreeList[edge.to]["din"] += 1 
+            return degreeList
+
+        def resetUsedEdges():
+            usedEdges = [[] for i in range(0,self.size)]
+            for vertexList in self.adjarr:
+                for edge in vertexList:
+                    usedEdges[edge.origin].append(False)
+            return usedEdges
+        
+        def fullEdgesList():
+            usedEdges = [[] for i in range(0,self.size)]
+            for vertexList in self.adjarr:
+                for edge in vertexList:
+                    usedEdges[edge.origin].append(True)
+            return usedEdges
+        
+        def curEdgesUsed(arr):
+            return arr == [True for i in range(0,len(arr))]
+        
+        def removeEdge(i,j):
+            if self.directed:
+                #Remove from I to J
+                for index in range(0,len(self.adjarr[i])):
+                    if self.adjarr[i][index].to == j and not usedEdges[i][index]:
+                        usedEdges[i][index] = True
+                        break
+            else:
+                #Remove from I to J
+                for index in range(0,len(self.adjarr[i])):
+                    if self.adjarr[i][index].to == j and not usedEdges[i][index]:
+                        usedEdges[i][index] = True
+                        break
+                #Remove from J to I
+                for index in range(0,len(self.adjarr[j])):
+                    if self.adjarr[j][index].to == i and not usedEdges[j][index]:
+                        usedEdges[j][index] = True
+                        break
+        
+        def allNodesUsed():
+            return usedEdges == fullEdgesList()
+        
+        def checkDegreeConditions():
+            v0 = 0
+            if self.directed:
+                vStart = -1
+                vEnd = -1
+                dList = degreeList()
+                for index in range(0,len(dList)):
+                    degrees = dList[index]
+                    if degrees["din"] != degrees["dout"]:
+                        if vStart != -1 and vEnd != -1:
+                            print("Degree edges wrong")
+                            return []
+                        elif degrees["out"] == degrees["din"] + 1 and vStart == -1:
+                            vStart = index
+                            v0 = vStart
+                        elif degrees["din"] == degrees["dout"] + 1 and vEnd == -1:
+                            vEnd = index
+                        else:
+                            print("Degree edges wrong")
+                            return []
+                if vStart != -1:
+                    print("Euler Path")
+                else:
+                    print("Euler Cycle")
+            else:
+                oddNum = 0
+                dList = degreeList()
+                for index in range(0,len(dList)):
+                    degrees = dList[index]
+                    if degrees["din"] != degrees["dout"]:
+                        print("Not undirected Graph")
+                        return []
+                    else:
+                        if degrees["din"] % 2 == 1:
+                            oddNum += 1
+                            v0 = index
+                if not (oddNum == 0 or oddNum == 2):
+                    print("Degree edges wrong")
+                    return []
+                elif oddNum == 0:
+                    print("Euler cycle")
+                elif oddNum == 2:
+                    print("Euler path")
+            return v0
+
+        #Check Connectivity
+        if len(self.allCC()) != 1:
+            print("Graph not connected")
+            return []
+
+        #Check Degrees and find starting node
+        v0 = checkDegreeConditions()
+                    
+        usedEdges = resetUsedEdges()
+        S = Stack()
+        curNode = v0
+
+        S.push(curNode)
+        path = []
+        while not allNodesUsed():
+            #Follow random path
+            followed = False
+
+            if curEdgesUsed(usedEdges[curNode]):
+                curNode = S.pop()
+                path.append(curNode)
+
+            else:
+                for markedindex in range(0,len(usedEdges[curNode])):
+                    if not followed:
+                        if not usedEdges[curNode][markedindex]:
+                            prev = curNode
+                            toNode = self.adjarr[curNode][markedindex].to
+
+                            removeEdge(prev,toNode)
+                            S.push(toNode)
+
+                            curNode = toNode
+                            followed = True
+        while not S.isEmpty():
+            path.append(S.pop())
+        return path
     
     def allCC(self):
         nodes = [i for i in range(0,self.size)]
         result = []
         while len(nodes) > 0:
-            curSCC = self.DFS(nodes[0])
+            curSCC = self.DFS(nodes[0])[0]
             for i in curSCC:
                 del nodes[nodes.index(i)]
             result.append(curSCC)
@@ -443,6 +575,27 @@ class UnDirectedGraph(Graph):
         
         return (MST.totalWeight(),MST)
     
+    def isBipartite(self):
+        Q = Queue()
+        visited = [False for i in range(0,self.size)]
+        color = [-1 for i in range(0,self.size)]
+
+        Q.enqueue(0)
+        color[0] = 0
+        visited[0] = True
+
+        while not Q.isEmpty():
+            curNode = Q.dequeue()
+    
+            for neighbour in self.adjarr[curNode]:
+                if visited[neighbour.to] and color[neighbour.to] == color[curNode]:
+                    return False
+                if not visited[neighbour.to]:
+                    Q.enqueue(neighbour.to)
+                    visited[neighbour.to] = True
+                    color[neighbour.to] = not color[curNode]
+        return True
+    
 class DirectedGraph(Graph):
     def __init__(self,n):
         super().__init__(n)
@@ -547,19 +700,8 @@ class DirectedGraph(Graph):
                 
                 allSCC.append(reversedDFS)
 
-        return allSCC
+        return allSC
 
-G1 = DirectedGraph(5)
-G1.insertDirectedEdge(0,1)
-G1.insertDirectedEdge(1,2)
-G1.insertDirectedEdge(2,3)
-G1.insertDirectedEdge(3,1)
-
-S = SortingArray([9,3,0,1,2])
-print(S.insertSort())
-
-#Both: Hierholzer's algorithm
-
-#Add datastructures Binary search trees, 2-3 trees, minimum subarray values
+#Add datastructures Binary search trees, 2-3 trees, segment trees
 
 #Add Quicksort
