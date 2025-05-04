@@ -4,9 +4,12 @@ import copy
 class SortingArray:
     def __init__(self,arr):
         self.arr = arr
+    
+    def append(self,val):
+        self.arr.append(val)
 
     def insertSort(self):
-        arr = copy.deepcopy(self.arr)
+        arr = self.arr
         sortedNum = 0
 
         def swap(indexA,indexB):
@@ -28,7 +31,7 @@ class SortingArray:
 
     def mergeSort(self):
         n = 1
-        arr = copy.deepcopy(self.arr)
+        arr = self.arr
 
         def mergeSortedArrays(A,B):
             result = []
@@ -60,6 +63,32 @@ class SortingArray:
             n *= 2
         
         return arr
+
+    def linSearch(self,val):
+        for i in range(0,len(self.arr)):
+            if self.arr[i] == val:
+                return i
+    
+    def binarySearch(self,val):
+        min = 0
+        max = len(self.arr) - 1
+        mid = (min+max)/2
+        arr = self.arr
+        while min < max:
+            #Check if list is sorted
+            if not (arr[min] <= arr[mid] <= arr[max]):
+                print("List not sorted")
+                return -1
+
+            #Binary search algorithm
+            if arr[mid] == val:
+                return mid
+            elif arr[mid] < val:
+                min = mid + 1
+            elif arr[mid] > val:
+                max = mid - 1
+        print("Value not in array")
+        return -1
         
     def printContents(self):
         print(self.arr)
@@ -104,7 +133,7 @@ class PriorityQueue:
             self.val = val
 
     def __init__(self,condition):
-        self.heap = [PriorityQueue.heapNode(-1,-1)]
+        self.heap = [PriorityQueue.heapNode(float('nan'),float('nan'))]
         self.keymap = {}
         self.size = 0
         #max = "max", min = "min"
@@ -695,6 +724,183 @@ class DirectedGraph(Graph):
 
         return allSCC
 
-#Add datastructures Binary search trees, 2-3 trees, segment trees
+class SegmentTree():
 
-#Add Quicksort
+    def __init__(self):
+        self.size = 0
+        self.capacity = 1
+        self.valArray = []
+        self.sumTree = [0]
+        self.minTree = [float('inf')]
+        self.maxTree = [float("-inf")]
+    
+    def buildTree(self,arr,type):
+        n = len(arr)
+        tree = [0] * (int(2 **math.ceil(math.log2(n)+1)))
+        tree[0] = float('nan')
+        size = 2 ** math.ceil(math.log2(n))
+
+        identity = -1
+        
+        def minCond(a,b):
+            return min(a,b)
+        
+        def maxCond(a,b):
+            return max(a,b)
+        
+        def sumCond(a,b):
+            return a+b
+
+        condition = -1
+        match type:
+            case "min":
+                condition = minCond
+                identity = float("inf")
+            case "max":
+                condition = maxCond
+                identity = float("-inf")
+            case "sum":
+                condition = sumCond
+                identity = 0
+            case _:
+                print("Wrong condition")
+                return
+        
+        padded_arr = arr + [identity] * (size - n)
+        n = len(padded_arr)
+
+        def build(node, l, r,cond):
+            if l == r:
+                tree[node] = padded_arr[l]
+            else:
+                mid = (l + r) // 2
+                build(2 * node, l, mid,cond)
+                build(2 * node + 1, mid + 1, r,cond)
+                tree[node] = cond(tree[2 * node] ,tree[2 * node + 1])
+
+        build(1, 0, n - 1,condition)
+        return tree
+        
+
+    def append(self,val):
+        self.valArray.append(val)
+        self.size += 1
+
+        if self.size > self.capacity:
+            # Need to rebuild trees with double capacity
+            self.capacity *= 2
+            self.sumTree = self.buildTree(self.valArray, "sum")
+            self.minTree = self.buildTree(self.valArray, "min")
+            self.maxTree = self.buildTree(self.valArray, "max")
+        else:
+            self.update(self.size - 1, val, "sum")
+            self.update(self.size - 1, val, "min")
+            self.update(self.size - 1, val, "max")
+    
+    def pop(self):
+        val = self.valArray.pop()
+        self.size -= 1
+
+        self.update(self.size - 1, 0, "sum")
+        self.update(self.size - 1, float('inf'), "min")
+        self.update(self.size - 1, float('-inf'), "max")
+
+        if self.size < self.capacity // 2 and self.capacity > 1:
+            self.capacity = math.floor(self.capacity/2)
+            self.sumTree = self.buildTree(self.valArray, "sum")
+            self.minTree = self.buildTree(self.valArray, "min")
+            self.maxTree = self.buildTree(self.valArray, "max")
+            
+        return val
+
+    def update(self, index, val, type):
+
+        def minCond(a, b):
+            return min(a, b)
+
+        def maxCond(a, b):
+            return max(a, b)
+
+        def sumCond(a, b):
+            return a + b
+
+        condition = -1
+        match type:
+            case "min":
+                condition = minCond
+                tree = self.minTree
+            case "max":
+                condition = maxCond
+                tree = self.maxTree
+            case "sum":
+                condition = sumCond
+                tree = self.sumTree
+            case _:
+                print("Wrong condition")
+                return
+        
+        size = math.floor(len(tree)/2)
+        i = size + index
+        tree[i] = val
+
+        # Update upwards
+        i = math.floor(i/2)
+        while i >= 1:
+            tree[i] = condition(tree[2 * i], tree[2 * i + 1])
+            i = math.floor(i/2)
+    
+    def range(self,i,j,type):
+
+        def minCond(a,b):
+            return min(a,b)
+        
+        def maxCond(a,b):
+            return max(a,b)
+        
+        def sumCond(a,b):
+            return a+b
+        
+        if i >= self.size or j >= self.size:
+            print("Incorrect indices")
+            return 
+
+        condition = -1
+        tree = []
+        match type:
+            case "min":
+                condition = minCond
+                tree = self.minTree
+                val = float("inf")
+            case "max":
+                condition = maxCond
+                tree = self.maxTree
+                val = float("-inf")
+            case "sum":
+                condition = sumCond
+                tree = self.sumTree
+                val = 0
+            case _:
+                print("Wrong condition")
+                return
+
+        i += self.capacity
+        j += self.capacity
+
+        while i <= j:
+            if (i % 2 == 1):
+                val = condition(val,tree[i])
+                i += 1
+            if (j % 2 == 0):
+                val = condition(val,tree[j])
+                j -= 1
+            i = math.floor(i/2)
+            j = math.floor(j/2)
+        return val
+
+    def printContents(self):
+        print("ValArray",self.valArray)
+        print("MinTreeArray",self.minTree)
+        print("maxTreeArray",self.maxTree)
+        print("sumTreeArray",self.sumTree)
+        
+#Add datastructures Binary search trees, 2-3 trees
