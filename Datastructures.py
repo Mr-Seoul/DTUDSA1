@@ -902,5 +902,118 @@ class SegmentTree():
         print("MinTreeArray",self.minTree)
         print("maxTreeArray",self.maxTree)
         print("sumTreeArray",self.sumTree)
-        
-#Add datastructures Binary search trees, 2-3 trees
+
+class BinarySearchTree():
+
+    class Node:
+        def __init__(self, key):
+            self.key = key
+            self.left = None
+            self.right = None
+
+    def __init__(self):
+        self.root = None
+
+    def insert(self, key):
+        def _insert(node, key):
+            if node is None:
+                return BinarySearchTree.Node(key)
+            if key < node.key:
+                node.left = _insert(node.left, key)
+            elif key > node.key:
+                node.right = _insert(node.right, key)
+            # Ignore duplicates
+            return node
+
+        self.root = _insert(self.root, key)
+
+    def search(self, key):
+        def _search(node, key):
+            if node is None:
+                return False
+            if key == node.key:
+                return True
+            elif key < node.key:
+                return _search(node.left, key)
+            else:
+                return _search(node.right, key)
+
+        return _search(self.root, key)
+
+    def delete(self, key):
+        def _min_value_node(node):
+            current = node
+            while current.left is not None:
+                current = current.left
+            return current
+
+        def _delete(node, key):
+            if node is None:
+                return None
+            if key < node.key:
+                node.left = _delete(node.left, key)
+            elif key > node.key:
+                node.right = _delete(node.right, key)
+            else:
+                if node.left is None:
+                    return node.right
+                elif node.right is None:
+                    return node.left
+                temp = _min_value_node(node.right)
+                node.key = temp.key
+                node.right = _delete(node.right, temp.key)
+            return node
+
+        self.root = _delete(self.root, key)
+
+    def inorder_traversal(self):
+        result = []
+        def _inorder(node):
+            if node:
+                _inorder(node.left)
+                result.append(node.key)
+                _inorder(node.right)
+        _inorder(self.root)
+        return result
+
+    def preorder_traversal(self):
+        result = []
+        def _preorder(node):
+            if node:
+                result.append(node.key)
+                _preorder(node.left)
+                _preorder(node.right)
+        _preorder(self.root)
+        return result
+
+    def postorder_traversal(self):
+        result = []
+        def _postorder(node):
+            if node:
+                _postorder(node.left)
+                _postorder(node.right)
+                result.append(node.key)
+        _postorder(self.root)
+        return result
+
+    def print_tree(self):
+        def _print(node, prefix="", is_left=True):
+            if node.right:
+                _print(node.right, prefix + ("│   " if is_left else "    "), False)
+            print(prefix + ("└── " if is_left else "┌── ") + str(node.key))
+            if node.left:
+                _print(node.left, prefix + ("    " if is_left else "│   "), True)
+        if self.root:
+            _print(self.root)
+        else:
+            print("Empty tree")
+
+BST = BinarySearchTree()
+BST.insert(6)
+BST.insert(5)
+BST.insert(1)
+BST.insert(3)
+BST.insert(2)
+BST.insert(4)
+
+BST.print_tree()
