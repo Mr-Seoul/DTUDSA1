@@ -2,6 +2,14 @@ import math
 import heapq
 from collections import deque
 
+def gcd(a,b):
+    if b == 0:
+        return a
+    return gcd(b,a%b)
+
+def lcm(a,b):
+    return (a*b)/(gcd(a,b))
+
 class SortingArray:
     def __init__(self,arr):
         self.arr = arr
@@ -861,23 +869,11 @@ class BinarySearchTree():
         _postorder(self.root)
         return result
 
-    def print_tree(self):
-        def _print(node, prefix="", is_left=True):
-            if node.right:
-                _print(node.right, prefix + ("│   " if is_left else "    "), False)
-            print(prefix + ("└── " if is_left else "┌── ") + str(node.key))
-            if node.left:
-                _print(node.left, prefix + ("    " if is_left else "│   "), True)
-        if self.root:
-            _print(self.root)
-        else:
-            print("Empty tree")
+#G = UnDirectedGraph(5)
+#G.insertUndirectedEdge(0,1)
+#G.insertUndirectedEdge(1,2)
+#G.insertUndirectedEdge(2,3)
+#G.insertUndirectedEdge(3,4)
+#G.insertUndirectedEdge(1,4)
 
-G = UnDirectedGraph(5)
-G.insertUndirectedEdge(0,1)
-G.insertUndirectedEdge(1,2)
-G.insertUndirectedEdge(2,3)
-G.insertUndirectedEdge(3,4)
-G.insertUndirectedEdge(1,4)
-
-print(G.Dijkstra())
+#print(G.Dijkstra())
