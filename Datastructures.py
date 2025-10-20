@@ -1,5 +1,6 @@
 import math
-import copy
+import heapq
+from collections import deque
 
 class SortingArray:
     def __init__(self,arr):
@@ -32,37 +33,38 @@ class SortingArray:
     def mergeSort(self):
         n = 1
         arr = self.arr
+        inversions = 0
 
-        def mergeSortedArrays(A,B):
-            result = []
-            while len(A) + len(B) > 0:
-                    if len(A) > 0 and len(B) > 0:
-                        if A[0] < B[0]:
-                            result.append(A[0])
-                            del A[0]
+        def mergeSortedArrays(start,A,B):
+            indexA = 0
+            indexB = 0
+            while indexA + indexB < len(A) + len(B):
+                    if indexA < len(A) and indexB < len(B):
+                        if A[indexA] < B[indexB]:
+                            self.arr[start + indexA + indexB] = A[indexA]
+                            indexA += 1
                         else:
-                            result.append(B[0])
-                            del B[0]
-                    elif len(A) > 0:
-                        for i in A:
-                            result.append(i)
-                        A = []
-                    elif len(B) > 0:
-                        for i in B:
-                            result.append(i)
-                        B = []
-            return result
+                            self.arr[start + indexA + indexB] = B[indexB]
+                            indexB += 1
+                            inversions += 1
+                    elif indexA < len(A):
+                        while indexA < len(A):
+                            self.arr[start + indexA + indexB] = A[indexA]
+                            indexA += 1
+                    elif indexB < len(B):
+                        while indexB < len(B):
+                            self.arr[start + indexA + indexB] = B[indexB]
+                            indexB += 1
 
         while n < len(arr):
             for seg in range(0,math.ceil(len(arr)/(2*n))):
                 min = 2*n*seg
                 leftarr = arr[min:min+n]
                 rightarr = arr[min+n:min+2*n]
-                newarr = mergeSortedArrays(leftarr,rightarr)
-                arr[min:min+2*n] = newarr
+                mergeSortedArrays(min,leftarr,rightarr)
             n *= 2
         
-        return arr
+        return [arr,inversions]
 
     def linSearch(self,val):
         for i in range(0,len(self.arr)):
@@ -104,10 +106,15 @@ class Stack:
     def pop(self):
         if not self.isEmpty():
             val =  self.stackarr[-1]
-            self.stackarr = self.stackarr[0:len(self.stackarr)-1]
+            self.stackarr.pop()
             return val
     def isEmpty(self):
         return len(self.stackarr) == 0
+    def top(self):
+        if len(self.stackarr) > 0:
+            return self.stackarr[-1]
+        else:
+            return
     def printContents(self):
         print(self.stackarr)
 
@@ -125,117 +132,6 @@ class Queue:
         return len(self.stackarr) == 0
     def printContents(self):
         print(self.stackarr)
-
-class PriorityQueue:
-    class heapNode:
-        def __init__(self,key,val):
-            self.key = key
-            self.val = val
-
-    def __init__(self,condition):
-        self.heap = [PriorityQueue.heapNode(float('nan'),float('nan'))]
-        self.keymap = {}
-        self.size = 0
-        #max = "max", min = "min"
-        self.condition = condition
-    
-    def swapNode(self, i, j):
-        self.keymap[self.heap[i].key], self.keymap[self.heap[j].key] = j, i
-        self.heap[i], self.heap[j] = self.heap[j], self.heap[i]
-    
-    def extreme(self):
-        return self.heap[1]
-    
-    def extractExtreme(self):
-        rootNode = self.heap[1]
-        #Remove the first value from the heap
-        del self.keymap[rootNode.key]
-        #now copy the last value to the first and bubble down
-        if self.size > 1:
-            last = self.size
-            self.heap[1] = self.heap[last]
-            self.keymap[self.heap[1].key] = 1
-            self.heap.pop()
-            self.bubbleDown(1)
-        elif self.size == 1:
-            #Since the root node has been deleted, the heap is now empty.
-            self.heap.pop()
-        self.size -= 1
-        return {"key":rootNode.key,"val":rootNode.val}
-    
-    def heapCondition(self,parentNode, childNode):
-        if self.condition == "min":
-            if parentNode.val > childNode.val:
-                return False
-        elif self.condition == "max":
-            if parentNode.val < childNode.val:
-                return False
-        return True
-
-    def bubbleDown(self,index):
-        #Check if this has left leaf node
-        leftchild = 2*index
-        if self.size > leftchild:
-            if not self.heapCondition(self.heap[index], self.heap[leftchild]):
-                #First switch node values
-                self.swapNode(index,leftchild)
-            
-                self.bubbleDown(leftchild)
-        #Check if this has right leaf node
-        rightchild = 2*index + 1
-        if self.size > rightchild:
-            if not self.heapCondition(self.heap[index], self.heap[rightchild]):
-                #First switch node values
-                self.swapNode(index,rightchild)
-                
-                self.bubbleDown(rightchild)
-    
-    def bubbleUp(self,index):
-        #Check if this is root node
-        if index == 1:
-            return
-        parent = (index) // 2
-        if not self.heapCondition(self.heap[parent], self.heap[index]):
-            #First switch keymap values
-            temp = self.keymap[self.heap[index].key]
-            self.keymap[self.heap[index].key] = self.keymap[self.heap[parent].key]
-            self.keymap[self.heap[parent].key] = temp
-            #Now switch values in heap
-            temp = self.heap[index]
-            self.heap[index] = self.heap[parent]
-            self.heap[parent] = temp
-            self.bubbleUp(parent)
-
-    def insert(self, keypair):
-        #The keypair needs to be in the format: {"key":key,"val":value}
-        if keypair['key'] not in self.keymap:
-            self.heap.append(PriorityQueue.heapNode(keypair['key'],keypair['val']))
-            self.size+=1
-            self.keymap.update({keypair['key']:self.size})
-
-            self.bubbleUp(self.keymap[keypair['key']])   
-    
-    def updateKey(self, keypair):
-        if keypair['key'] in self.keymap:
-            targetNode = self.heap[self.keymap[keypair['key']]]
-            if targetNode.val > keypair['val'] and self.condition == "min":
-                targetNode.val = keypair['val']
-                self.bubbleUp(self.keymap[keypair['key']])
-                return True
-            elif targetNode.val < keypair['val'] and self.condition == "max":
-                targetNode.val = keypair['val']
-                self.bubbleDown(self.keymap[keypair['key']])
-                return True   
-        return False
-
-    def isEmpty(self):
-        return self.size == 0
-
-    def printContents(self):
-        print([(node.key,node.val) for node in self.heap])
-    
-    def hasKey(self,key):
-        return key in self.keymap
     
 class Graph:
     class dirEdge:
@@ -260,8 +156,10 @@ class Graph:
         S = Queue()
         visited = [False for i in range(0,self.size)]
         visited[v0] = True
+
         parent = [-1 for i in range(0,self.size)]
         parent[v0] = v0
+
         visitpath = []
 
         def path(checkingNode):
@@ -272,7 +170,7 @@ class Graph:
             path.append(checkingNode)
             return path[::-1]
 
-        S.enqueue((v0,False))
+        S.enqueue(v0)
         while(not S.isEmpty()):
             curNode = S.dequeue()
             #Check if target
@@ -306,48 +204,6 @@ class Graph:
                         S.push((neighbour.to,False))
                         visited[neighbour.to] = True
         return [visitpath, postpath]
-    
-    def Dijkstra(self,v0,target = -1):
-        P = PriorityQueue("min")        
-        #Initialize priority queue, visited and minDist
-        visited = []
-        parent = [i for i in range(self.size)]
-        minDist = [float('inf') for i in range(0,self.size)]
-        minDist[v0] = 0
-
-        def path(curNode):
-            path = []
-            checkingNode = curNode['key']
-            while checkingNode != parent[checkingNode]:
-                path.append(checkingNode)
-                checkingNode = parent[checkingNode]
-            path.append(checkingNode)
-            return (minDist[curNode['key']],path[::-1])
-        #Algorithm
-        P.insert({"key":v0,"val":0})
-
-        while not P.isEmpty():
-            curNode = P.extractExtreme()
-            visited.append(curNode['key'])
-            #Check if target
-            if curNode['key'] == target:
-                return path(curNode)
-            for neighbour in self.adjarr[curNode['key']]:
-                if neighbour.to not in visited:
-                    #RelaxEdges
-                    if not P.hasKey(neighbour.to):
-                        P.insert({"key":neighbour.to,"val":curNode['val']+neighbour.weight})
-                        minDist[neighbour.to] = curNode['val']+neighbour.weight
-                        parent[neighbour.to] = curNode['key']
-                    else:
-                        pathAdded = P.updateKey({"key":neighbour.to,"val":curNode['val']+neighbour.weight})
-                        if pathAdded:
-                            parent[neighbour.to] = curNode['key']
-                            minDist[neighbour.to] = curNode['val']+neighbour.weight
-        if target == -1:
-            return minDist
-        else:
-            return []
         
     def Hierholzer(self):
 
@@ -403,7 +259,7 @@ class Graph:
                         if vStart != -1 and vEnd != -1:
                             print("Degree edges wrong")
                             return []
-                        elif degrees["out"] == degrees["din"] + 1 and vStart == -1:
+                        elif degrees["dout"] == degrees["din"] + 1 and vStart == -1:
                             vStart = index
                             v0 = vStart
                         elif degrees["din"] == degrees["dout"] + 1 and vEnd == -1:
@@ -443,6 +299,8 @@ class Graph:
 
         #Check Degrees and find starting node
         v0 = checkDegreeConditions()
+        if v0 == []:
+            return
                     
         usedEdges = filledUsedEdges(False)
         S = Stack()
@@ -451,12 +309,12 @@ class Graph:
         S.push(curNode)
         path = []
         while not allNodesUsed():
+            curNode = S.top()
             #Follow random path
             followed = False
 
             if curEdgesUsed(usedEdges[curNode]):
-                curNode = S.pop()
-                path.append(curNode)
+                path.append(S.pop())
 
             else:
                 for markedindex in range(0,len(usedEdges[curNode])):
@@ -473,16 +331,6 @@ class Graph:
         while not S.isEmpty():
             path.append(S.pop())
         return path
-    
-    def allCC(self):
-        nodes = [i for i in range(0,self.size)]
-        result = []
-        while len(nodes) > 0:
-            curSCC = self.DFS(nodes[0])[0]
-            for i in curSCC:
-                del nodes[nodes.index(i)]
-            result.append(curSCC)
-        return result
 
     def printAdjList(self):
         for vertix in self.adjarr:
@@ -516,7 +364,7 @@ class UnDirectedGraph(Graph):
         r1 = self.find(indexA)
         r2 = self.find(indexB)
         if r1 != r2:
-            self.unionarr[indexA] = indexB
+            self.unionarr[r1] = indexB
     
     def isConnected(self,indexA,indexB):
         return self.find(indexA) == self.find(indexB)
@@ -529,73 +377,47 @@ class UnDirectedGraph(Graph):
         self.adjarr[vTo].append(Graph.dirEdge(vTo,vFrom,weight))
         self.union(vFrom,vTo)
     
-    def Kruskal(self):
-        #Check if connected
-        if len(self.allSCC()) != 1:
-            return UnDirectedGraph(0)
-
-        #add all edges to priority queue, remove all duplicate edges (same origin,to), keep the lowest weight
-        P = PriorityQueue("min")
-        for vertexlist in self.adjarr:
-            for edge in vertexlist:
-                sortedVertix = sorted([edge.to,edge.origin])
-                key = str(sortedVertix[0]) + ":" + str(sortedVertix[1])
-                if not P.hasKey(key):
-                    P.insert({"key":key,"val":edge.weight})
-                else:
-                    P.updateKey({"key":key,"val":edge.weight})
+    def allCC(self):
+        result = [[] for i in range(self.size)]
+        for node in range(self.size):
+            result[self.find(node)].append(node)
+        result = [result[i] for i in range(self.size) if result[i] != []]
         
-        def graphEdgesNum(undirGraph):
-            num = 0
-            for vertexlist in undirGraph.adjarr:
-                for edge in vertexlist:
-                    num += 0.5
-            return num
+        return result
 
-        #Algorithm
-        MST = UnDirectedGraph(self.size)
-        while graphEdgesNum(MST) != self.size - 1:
-            curEdge = P.extractExtreme()
-            edgeFrom = int(curEdge['key'].split(":")[0])
-            edgeTo = int(curEdge['key'].split(":")[1])
-            if MST.find(edgeFrom) != MST.find(edgeTo):
-                MST.insertUndirectedEdge(edgeFrom,edgeTo,curEdge['val'])
+    def MST(self,AssumeConnectivity=True):
+        #Prim's algorith.
 
-        return (MST.totalWeight(),MST)
-
-    def Prim(self,v0):
-        #Check if connected
-        if len(self.allSCC()) != 1:
+        #Check if connected(Only if specified for performance reasons)
+        if len(self.allCC()) != 1 and not AssumeConnectivity:
             return UnDirectedGraph(0)
     
         #Like dijkstra's, but with neighbour.weight, not cur[key] + neightbour.weight
-        P = PriorityQueue("min")
-        MST = UnDirectedGraph(self.size)
-        inMST = [False for i in range(0,self.size)]
-
-        prev = v0
-        curNode = v0
-        inMST[v0] = True
+        P = []
+        MSTGraph = UnDirectedGraph(self.size)
+        inMST = dict()
+        for i in range(self.size):
+            inMST.update({i:False})
 
         #Initialize Priority queue
-        for neighbour in self.adjarr[v0]:
-            P.insert({"key":neighbour.to,"val":neighbour.weight})
+        for node in range(0,self.size):
+            neighbourlist = self.adjarr[node]
+            for neighbour in neighbourlist:
+                heapq.heappush(P, [neighbour.weight ,neighbour.origin, neighbour.to])
         
-        while not P.isEmpty():
-            curEdge = P.extractExtreme()
-            MST.insertUndirectedEdge(prev,curEdge['key'],curEdge['val'])
-            prev = curNode
-            curNode = curEdge['key']
-            inMST[curNode] = True
+        #Keep on checking if the cheapest edge fits, and if it does do so.
+        while len(P) > 0 and len(inMST) > 0:
+            weight, origin, to = heapq.heappop(P)
+            #Check if the two edges are connected
+            if MSTGraph.find(origin) != MSTGraph.find(to):
+                #Connect vertices in MST
+                MSTGraph.insertUndirectedEdge(origin,to,weight)
 
-            for neighbour in self.adjarr[curNode]:
-                if not inMST[neighbour.to]:
-                    if P.hasKey(neighbour.to):
-                        P.updateKey({"key":neighbour.to,"val":neighbour.weight})
-                    else:
-                        P.insert({"key":neighbour.to,"val":neighbour.weight})
+                #Remove used edges
+                inMST.pop(origin,False)
+                inMST.pop(to,False)
         
-        return (MST.totalWeight(),MST)
+        return (MSTGraph.totalWeight(),MSTGraph)
     
     def isBipartite(self):
         Q = Queue()
@@ -635,7 +457,7 @@ class DirectedGraph(Graph):
     
     def TopologicalSort(self):
         degreeList = [0 for _ in range(0,self.size)]
-        zeroStack = Stack()
+        ZeroQueue = deque()
         path = []
 
         for vertexlist in self.adjarr:
@@ -645,16 +467,16 @@ class DirectedGraph(Graph):
         def addZeroNodes():
             for vertex in range(0, self.size):
                 if degreeList[vertex] == 0:
-                    zeroStack.push(vertex)
+                    ZeroQueue.append(vertex)
 
         addZeroNodes()
-        while not zeroStack.isEmpty():
-            curNode = zeroStack.pop()
+        while len(ZeroQueue) > 0:
+            curNode = ZeroQueue.popleft()
             path.append(curNode)
             for neighbour in self.adjarr[curNode]:
                 degreeList[neighbour.to] -= 1
                 if degreeList[neighbour.to] == 0:
-                    zeroStack.push(neighbour.to)
+                    ZeroQueue.append(neighbour.to)
 
         if len(path) == len(self.adjarr):
             return path
@@ -666,7 +488,7 @@ class DirectedGraph(Graph):
     
     def TopologicalShortestPath(self,v0,target = -1):
         topoSort = self.TopologicalSort()
-        #See if graph isn''t DAG
+        #See if graph isn't DAG
         if topoSort == []:
             return []
         
@@ -723,6 +545,49 @@ class DirectedGraph(Graph):
                 allSCC.append(reversedDFS)
 
         return allSCC
+    
+    #If no target is given, the entire dijkstra graph will be generated
+    def Dijkstra(self, v0, target=-1):
+        P = []  # priority queue
+        visited = set()
+        parent = [i for i in range(self.size)]
+        minDist = [float('inf')] * self.size
+        minDist[v0] = 0
+
+        def path(curNode):
+            node = curNode[1]
+            p = []
+            while node != parent[node]:
+                p.append(node)
+                node = parent[node]
+            p.append(node)
+            return (minDist[curNode[1]], p[::-1])
+
+        # Initialize queue
+        heapq.heappush(P, (0, v0))  # (distance, node)
+
+        while P:
+            val, key = heapq.heappop(P)
+            # Skip outdated entries (lazy deletion)
+            if val > minDist[key]:
+                continue
+            visited.add(key)
+            # Target found
+            if key == target:
+                return path((val, key))
+            # Explore neighbors
+            for neighbour in self.adjarr[key]:
+                if neighbour.to in visited:
+                    continue
+                newDist = val + neighbour.weight
+                if newDist < minDist[neighbour.to]:
+                    minDist[neighbour.to] = newDist
+                    parent[neighbour.to] = key
+                    heapq.heappush(P, (newDist, neighbour.to))
+        if target == -1:
+            return minDist
+        else:
+            return []
 
 class SegmentTree():
 
@@ -806,7 +671,7 @@ class SegmentTree():
         self.update(self.size - 1, float('-inf'), "max")
 
         if self.size < self.capacity // 2 and self.capacity > 1:
-            self.capacity = math.floor(self.capacity/2)
+            self.capacity = self.capacity//2
             self.sumTree = self.buildTree(self.valArray, "sum")
             self.minTree = self.buildTree(self.valArray, "min")
             self.maxTree = self.buildTree(self.valArray, "max")
@@ -839,15 +704,15 @@ class SegmentTree():
                 print("Wrong condition")
                 return
         
-        size = math.floor(len(tree)/2)
+        size = len(tree)//2
         i = size + index
         tree[i] = val
 
         # Update upwards
-        i = math.floor(i/2)
+        i = i//2
         while i >= 1:
             tree[i] = condition(tree[2 * i], tree[2 * i + 1])
-            i = math.floor(i/2)
+            i = i//2
     
     def range(self,i,j,type):
 
@@ -893,8 +758,8 @@ class SegmentTree():
             if (j % 2 == 0):
                 val = condition(val,tree[j])
                 j -= 1
-            i = math.floor(i/2)
-            j = math.floor(j/2)
+            i = i//2
+            j = j//2
         return val
 
     def printContents(self):
@@ -1008,12 +873,11 @@ class BinarySearchTree():
         else:
             print("Empty tree")
 
-BST = BinarySearchTree()
-BST.insert(6)
-BST.insert(5)
-BST.insert(1)
-BST.insert(3)
-BST.insert(2)
-BST.insert(4)
+G = UnDirectedGraph(5)
+G.insertUndirectedEdge(0,1)
+G.insertUndirectedEdge(1,2)
+G.insertUndirectedEdge(2,3)
+G.insertUndirectedEdge(3,4)
+G.insertUndirectedEdge(1,4)
 
-BST.print_tree()
+print(G.Dijkstra())
