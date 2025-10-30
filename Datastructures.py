@@ -46,6 +46,7 @@ class SortingArray:
         def mergeSortedArrays(start,A,B):
             indexA = 0
             indexB = 0
+            nonlocal inversions
             while indexA + indexB < len(A) + len(B):
                     if indexA < len(A) and indexB < len(B):
                         if A[indexA] < B[indexB]:
@@ -54,7 +55,7 @@ class SortingArray:
                         else:
                             self.arr[start + indexA + indexB] = B[indexB]
                             indexB += 1
-                            inversions += 1
+                            inversions += len(A) - indexA
                     elif indexA < len(A):
                         while indexA < len(A):
                             self.arr[start + indexA + indexB] = A[indexA]
@@ -875,5 +876,6 @@ class BinarySearchTree():
 #G.insertUndirectedEdge(2,3)
 #G.insertUndirectedEdge(3,4)
 #G.insertUndirectedEdge(1,4)
+
 
 #print(G.Dijkstra())
