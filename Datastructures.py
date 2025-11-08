@@ -373,7 +373,7 @@ class UnDirectedGraph(Graph):
         r1 = self.find(indexA)
         r2 = self.find(indexB)
         if r1 != r2:
-            self.unionarr[r1] = indexB
+            self.unionarr[r1] = r2
     
     def isConnected(self,indexA,indexB):
         return self.find(indexA) == self.find(indexB)
@@ -879,3 +879,4 @@ class BinarySearchTree():
 
 
 #print(G.Dijkstra())
+
